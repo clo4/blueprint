@@ -215,12 +215,19 @@ let
           mkHomeConfiguration =
             {
               username,
+              hostname,
               modulePath,
               pkgs,
             }:
             home-manager.lib.homeManagerConfiguration {
               inherit pkgs;
-              extraSpecialArgs = specialArgs;
+              extraSpecialArgs = specialArgs // {
+                # Because of the way Home Manager configurations are structured
+                # with blueprint, the hostname is always known while building
+                # the config. There would be no easy way to get this data without
+                # exposing it here.
+                inherit hostname;
+              };
               modules = [
                 perSystemModule
                 modulePath
@@ -261,7 +268,7 @@ let
             homeConfigurations = lib.mapAttrs (
               _name: homeData:
               mkHomeConfiguration {
-                inherit (homeData) modulePath username;
+                inherit (homeData) modulePath username hostname;
                 inherit pkgs;
               }
             ) homesFlat;
