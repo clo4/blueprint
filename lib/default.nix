@@ -215,12 +215,19 @@ let
           mkHomeConfiguration =
             {
               username,
+              hostname,
               modulePath,
               pkgs,
             }:
             home-manager.lib.homeManagerConfiguration {
               inherit pkgs;
-              extraSpecialArgs = specialArgs;
+              extraSpecialArgs = specialArgs // {
+                # Home Manager doesn't set osConfig for standalone home
+                # configurations. With blueprint, each home configuration
+                # "belongs" to a host, so it's trivial to expose the host's
+                # configuration to a standalone build.
+                osConfig = hosts.${hostname}.value.config or null;
+              };
               modules = [
                 perSystemModule
                 modulePath
@@ -261,7 +268,7 @@ let
             homeConfigurations = lib.mapAttrs (
               _name: homeData:
               mkHomeConfiguration {
-                inherit (homeData) modulePath username;
+                inherit (homeData) modulePath username hostname;
                 inherit pkgs;
               }
             ) homesFlat;
